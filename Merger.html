@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bookmark Merger & Optimizer</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 0;
+            color: #2d3748;
+            background: #f0f4f8;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #1e3a5f;
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        header .badge {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 12px;
+        }
+
+        main {
+            padding: 28px 32px;
+        }
+
+        .desc {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            padding: 22px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin: 0 0 14px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .drop-zone {
+            border: 2px dashed #cbd5e0;
+            padding: 44px 20px;
+            text-align: center;
+            background: #f7fafc;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.2s;
+            color: #718096;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #0056b3;
+            background: #ebf8ff;
+            color: #2b6cb0;
+        }
+
+        .drop-zone .icon {
+            font-size: 36px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-box {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-box .num {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1e3a5f;
+            display: block;
+        }
+
+        .stat-box .label {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 2px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 13px 16px;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            font-weight: 700;
+            color: white;
+            transition: 0.15s;
+            min-width: 140px;
+        }
+
+        button:hover:not(:disabled) {
+            opacity: 0.87;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background: #cbd5e0 !important;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-blue {
+            background: #0d6efd;
+        }
+
+        .btn-green {
+            background: #198754;
+        }
+
+        .log-box {
+            background: #1a202c;
+            color: #a0ffb0;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 14px;
+            border-radius: 8px;
+            min-height: 80px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            display: none;
+            margin-top: 16px;
+        }
+
+        .log-box.show {
+            display: block;
+        }
+
+        .file-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .file-chip {
+            background: #ebf8ff;
+            color: #2b6cb0;
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>📚 Bookmark Merger &amp; Optimizer</h1>
+        <span class="badge">GH Pages</span>
+        <div style="flex:1;"></div>
+        <a href="editor.html"
+            style="color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;text-decoration:none;background:rgba(255,255,255,0.15);padding:6px 14px;border-radius:6px;transition:0.15s;"
+            onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+            onmouseout="this.style.background='rgba(255,255,255,0.15)'">✏️ エディタへ →</a>
+    </header>
+
+    <main>
+        <p class="desc">
+            複数のブックマークHTMLファイルを統合・最適化します。<br>
+            重複URL削除、ドメイン別フォルダ整理、ファイル間の差分抽出が可能です。
+        </p>
+
+        <div class="card">
+            <h2>📂 ファイルを選択</h2>
+            <div class="drop-zone" id="dropZone">
+                <span class="icon">📁</span>
+                ここにブックマークHTMLをドラッグ＆ドロップ<br>
+                またはクリックしてファイルを選択<br>
+                <small>（2つ以上のファイルを選択すると差分抽出も利用可能です）</small>
+            </div>
+            <input type="file" id="fileInput" multiple accept=".html,.htm">
+            <div class="file-chips" id="fileChips"></div>
+        </div>
+
+        <div class="card" id="resultCard" style="display:none;">
+            <h2>📊 解析結果</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="num" id="stat-total">0</span>
+                    <span class="label">総リンク数（重複込み）</span>
+                </div>
+                <div class="stat-box">
+                    <span class="num" id="stat-merged">0</span>
+                    <span class="label">統合後（ユニーク）</span>
+                </div>
+                <div class="stat-box">
+                    <span class="num" id="stat-diff">0</span>
+                    <span class="label">差分のみ（非重複）</span>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button id="downloadMergeBtn" class="btn-blue" disabled>
+                    🔗 すべて統合してDL<br>
+                    <span style="font-size:11px;font-weight:normal;">（重複は1つにまとめる）</span>
+                </button>
+                <button id="downloadDiffBtn" class="btn-green" disabled>
+                    ✂️ 差分のみDL<br>
+                    <span style="font-size:11px;font-weight:normal;">（共通するものを全て除外）</span>
+                </button>
+            </div>
+
+            <div class="log-box show" id="logBox"></div>
+        </div>
+    </main>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const downloadMergeBtn = document.getElementById('downloadMergeBtn');
+        const downloadDiffBtn = document.getElementById('downloadDiffBtn');
+        const logBox = document.getElementById('logBox');
+        const fileChips = document.getElementById('fileChips');
+        const resultCard = document.getElementById('resultCard');
+
+        // Map<URL, { title, url, addDate, hostname, fileIndices: Set<number> }>
+        let urlMap = new Map();
+        let fileCount = 0;
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        async function handleFiles(files) {
+            if (files.length === 0) return;
+            reset();
+            fileCount = files.length;
+
+            // ファイル名チップ表示
+            fileChips.innerHTML = Array.from(files).map(f =>
+                `<span class="file-chip">📄 ${f.name}</span>`
+            ).join('');
+
+            log(`📂 ${fileCount} ファイルを読み込み中...`);
+            resultCard.style.display = 'block';
+
+            const contents = await Promise.all(Array.from(files).map(readFile));
+            processContents(contents);
+        }
+
+        function readFile(file) {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.readAsText(file);
+            });
+        }
+
+        function reset() {
+            urlMap.clear();
+            logBox.textContent = '';
+            downloadMergeBtn.disabled = true;
+            downloadDiffBtn.disabled = true;
+            fileChips.innerHTML = '';
+            document.getElementById('stat-total').textContent = '0';
+            document.getElementById('stat-merged').textContent = '0';
+            document.getElementById('stat-diff').textContent = '0';
+        }
+
+        function log(msg) { logBox.textContent += msg + "\n"; }
+
+        function processContents(htmlContents) {
+            const parser = new DOMParser();
+            let totalLinks = 0;
+
+            htmlContents.forEach((html, fi) => {
+                const doc = parser.parseFromString(html, 'text/html');
+                const links = doc.querySelectorAll('a');
+                log(`ファイル ${fi + 1}: ${links.length} リンクを検出`);
+                totalLinks += links.length;
+
+                links.forEach(a => {
+                    const url = a.getAttribute('href');
+                    if (!url || !url.startsWith('http')) return;
+
+                    let hostname = 'Others';
+                    try { hostname = new URL(url).hostname; } catch (e) { }
+
+                    if (!urlMap.has(url)) {
+                        urlMap.set(url, {
+                            title: a.textContent.trim() || url,
+                            url,
+                            addDate: a.getAttribute('add_date') || Math.floor(Date.now() / 1000),
+                            hostname,
+                            fileIndices: new Set()
+                        });
+                    }
+                    urlMap.get(url).fileIndices.add(fi);
+                });
+            });
+
+            const all = Array.from(urlMap.values());
+            const merged = all.length;
+            const diffItems = all.filter(i => i.fileIndices.size === 1);
+            const diff = diffItems.length;
+
+            log(`──────────────────────`);
+            log(`解析完了:`);
+            log(`  総リンク数 (重複込): ${totalLinks}`);
+            log(`  統合後 (ユニーク):   ${merged}`);
+            log(`  差分のみ (非重複):   ${diff}`);
+            log(`  共通 (全ファイル共通): ${merged - diff} 件は差分版から除外されます`);
+
+            document.getElementById('stat-total').textContent = totalLinks.toLocaleString();
+            document.getElementById('stat-merged').textContent = merged.toLocaleString();
+            document.getElementById('stat-diff').textContent = diff.toLocaleString();
+
+            downloadMergeBtn.disabled = false;
+            downloadDiffBtn.disabled = fileCount < 2 ? true : diff === 0;
+        }
+
+        downloadMergeBtn.addEventListener('click', () => {
+            const bookmarks = Array.from(urlMap.values()).sort((a, b) => a.hostname.localeCompare(b.hostname));
+            downloadHTML(bookmarks, 'bookmarks_merged');
+            log(`\n💾 統合ファイルをダウンロード中 (${bookmarks.length} 件)...`);
+        });
+
+        downloadDiffBtn.addEventListener('click', () => {
+            const bookmarks = Array.from(urlMap.values())
+                .filter(i => i.fileIndices.size === 1)
+                .sort((a, b) => a.hostname.localeCompare(b.hostname));
+            downloadHTML(bookmarks, 'bookmarks_diff');
+            log(`\n💾 差分ファイルをダウンロード中 (${bookmarks.length} 件)...`);
+        });
+
+        function downloadHTML(bookmarks, prefix) {
+            const html = generateNetscapeHTML(bookmarks);
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+            a.download = `${prefix}_${new Date().toISOString().slice(0, 10)}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        }
+
+        function generateNetscapeHTML(bookmarks) {
+            const grouped = {};
+            bookmarks.forEach(b => {
+                if (!grouped[b.hostname]) grouped[b.hostname] = [];
+                grouped[b.hostname].push(b);
+            });
+
+            let html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- Generated by Bookmark Merger & Optimizer -->
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks</H1>
+<DL><p>
+`;
+            for (const [hostname, items] of Object.entries(grouped)) {
+                html += `    <DT><H3 ADD_DATE="${Math.floor(Date.now() / 1000)}">${esc(hostname)}</H3>\n`;
+                html += `    <DL><p>\n`;
+                items.forEach(item => {
+                    html += `        <DT><A HREF="${esc(item.url)}" ADD_DATE="${item.addDate}">${esc(item.title)}</A>\n`;
+                });
+                html += `    </DL><p>\n`;
+            }
+            html += `</DL><p>`;
+            return html;
+        }
+
+        function esc(s) {
+            if (!s) return "";
+            return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+    </script>
+</body>
+
+</html>
