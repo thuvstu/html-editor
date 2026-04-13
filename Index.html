@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmark Tools</title>
+    <style>
+        /* ── Reset & Base ──────────────────────────────────────── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f0f4f8;
+            color: #2d3748;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-size: 14px;
+        }
+
+        /* ── Header ─────────────────────────────────────────────── */
+        header {
+            background: #1e3a5f;
+            color: white;
+            padding: 0 28px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* ── Tab Bar ─────────────────────────────────────────────── */
+        #tab-bar {
+            background: #fff;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            padding: 0 28px;
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            padding: 12px 22px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-weight: 700;
+            font-size: 14px;
+            color: #718096;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .tab-btn:hover {
+            color: #2d3748;
+            background: #f7fafc;
+        }
+
+        .tab-btn.active {
+            color: #1e3a5f;
+            border-bottom-color: #1e3a5f;
+        }
+
+        /* ── Tab Content ─────────────────────────────────────────── */
+        .tab-content {
+            display: none;
+            flex: 1;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+   MERGER TAB
+═══════════════════════════════════════════════════════════ */
+        #merger-view {
+            max-width: 820px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 28px 24px;
+        }
+
+        .desc {
+            color: #4a5568;
+            margin-bottom: 22px;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            padding: 22px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin: 0 0 14px 0;
+        }
+
+        .drop-zone {
+            border: 2px dashed #cbd5e0;
+            padding: 44px 20px;
+            text-align: center;
+            background: #f7fafc;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.2s;
+            color: #718096;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #0056b3;
+            background: #ebf8ff;
+            color: #2b6cb0;
+        }
+
+        .drop-zone .dz-icon {
+            font-size: 36px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-box {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-box .num {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1e3a5f;
+            display: block;
+        }
+
+        .stat-box .lbl {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 2px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .dl-btn {
+            flex: 1;
+            padding: 13px 16px;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            font-weight: 700;
+            color: white;
+            transition: 0.15s;
+            min-width: 140px;
+        }
+
+        .dl-btn:hover:not(:disabled) {
+            opacity: 0.87;
+            transform: translateY(-1px);
+        }
+
+        .dl-btn:disabled {
+            background: #cbd5e0 !important;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-blue {
+            background: #0d6efd;
+        }
+
+        .btn-green {
+            background: #198754;
+        }
+
+        .file-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .file-chip {
+            background: #ebf8ff;
+            color: #2b6cb0;
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .log-box {
+            background: #1a202c;
+            color: #a0ffb0;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 14px;
+            border-radius: 8px;
+            min-height: 60px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .log-box.show {
+            display: block;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+   EDITOR TAB
+═══════════════════════════════════════════════════════════ */
+        #editor-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* Editor Toolbar */
+        #ed-toolbar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 8px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        #ed-stats {
+            font-size: 12px;
+            color: #a0aec0;
+        }
+
+        .ed-spacer {
+            flex: 1;
+        }
+
+        .ed-tb-btn {
+            padding: 7px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.15s;
+            white-space: nowrap;
+        }
+
+        .ed-tb-btn:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
+        }
+
+        .ed-import {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .ed-export {
+            background: #0d9488;
+            color: white;
+        }
+
+        .ed-export:disabled {
+            background: #cbd5e0;
+            color: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #ed-file-input {
+            display: none;
+        }
+
+        /* Editor Layout */
+        #ed-layout {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* Tree Panel */
+        #ed-tree-panel {
+            width: 260px;
+            min-width: 180px;
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        #ed-tree-header {
+            padding: 9px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .tree-add-btn {
+            background: none;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            color: #4a5568;
+            padding: 2px 7px;
+            transition: 0.15s;
+        }
+
+        .tree-add-btn:hover {
+            background: #f0f4f8;
+            border-color: #0056b3;
+            color: #0056b3;
+        }
+
+        #ed-tree-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px 0;
+        }
+
+        .tree-empty {
+            padding: 20px 14px;
+            font-size: 13px;
+            color: #a0aec0;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* Tree Nodes */
+        .tn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 8px 6px 0;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 1px 5px;
+            transition: background 0.1s;
+            user-select: none;
+            min-height: 30px;
+        }
+
+        .tn:hover {
+            background: #f7fafc;
+        }
+
+        .tn.selected {
+            background: #ebf8ff;
+            color: #2b6cb0;
+        }
+
+        .tn.selected .tn-lbl {
+            font-weight: 600;
+        }
+
+        .tn-ind {
+            flex-shrink: 0;
+        }
+
+        .tn-tog {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: #a0aec0;
+            border-radius: 3px;
+        }
+
+        .tn-tog:hover {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .tn-tog-ph {
+            width: 15px;
+            flex-shrink: 0;
+        }
+
+        .tn-ico {
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .tn-lbl {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        .tn-cnt {
+            font-size: 10px;
+            color: #a0aec0;
+            background: #f7fafc;
+            padding: 1px 5px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .tn.selected .tn-cnt {
+            background: #bee3f8;
+            color: #2b6cb0;
+        }
+
+        /* Content Panel */
+        #ed-content-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        #ed-content-header {
+            background: white;
+            padding: 9px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        #ed-breadcrumb {
+            flex: 1;
+            font-size: 13px;
+            color: #4a5568;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .bc-item {
+            cursor: pointer;
+            color: #0056b3;
+        }
+
+        .bc-item:hover {
+            text-decoration: underline;
+        }
+
+        .bc-sep {
+            color: #cbd5e0;
+            margin: 0 4px;
+        }
+
+        .bc-cur {
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        #ed-content-actions {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .ca-btn {
+            padding: 5px 11px;
+            border: 1px solid #cbd5e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            transition: 0.15s;
+            white-space: nowrap;
+        }
+
+        .ca-btn:hover {
+            background: #f0f4f8;
+            border-color: #0056b3;
+            color: #0056b3;
+        }
+
+        .ca-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Search */
+        #ed-search-bar {
+            padding: 7px 14px;
+            border-bottom: 1px solid #f0f4f8;
+            background: white;
+            display: none;
+        }
+
+        #ed-search-bar.show {
+            display: block;
+        }
+
+        #ed-search-input {
+            width: 100%;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        #ed-search-input:focus {
+            border-color: #0056b3;
+        }
+
+        #ed-content-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ed-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #a0aec0;
+            font-size: 14px;
+            text-align: center;
+            gap: 10px;
+            line-height: 1.6;
+        }
+
+        .ed-empty .big-ico {
+            font-size: 44px;
+        }
+
+        /* Content Items */
+        .ci {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 7px;
+            padding: 8px 11px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: box-shadow 0.15s, border-color 0.15s;
+        }
+
+        .ci:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+            border-color: #cbd5e0;
+        }
+
+        .ci-ico {
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .ci-info {
+            flex: 1;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .ci-ttl {
+            font-size: 13px;
+            font-weight: 500;
+            color: #2d3748;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            line-height: 1.4;
+        }
+
+        .ci-ttl:hover {
+            color: #0056b3;
+        }
+
+        .ci-url {
+            font-size: 11px;
+            color: #a0aec0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-top: 1px;
+            cursor: pointer;
+        }
+
+        .ci-url:hover {
+            color: #0056b3;
+        }
+
+        .ci-meta {
+            font-size: 11px;
+            color: #a0aec0;
+            margin-top: 1px;
+        }
+
+        .ci-acts {
+            display: flex;
+            gap: 3px;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .ci:hover .ci-acts {
+            opacity: 1;
+        }
+
+        .ia-btn {
+            width: 27px;
+            height: 27px;
+            border: none;
+            background: #f7fafc;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+            color: #4a5568;
+        }
+
+        .ia-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .ia-btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+            background: none;
+        }
+
+        .ia-del:hover {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .ia-open:hover {
+            background: #ebf8ff;
+            color: #2b6cb0;
+        }
+
+        .ci-edit-input {
+            width: 100%;
+            border: 1px solid #0056b3;
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 13px;
+            outline: none;
+            background: #ebf8ff;
+            color: #2d3748;
+            font-family: inherit;
+        }
+
+        .ci-edit-input.url-inp {
+            font-size: 11px;
+            color: #4a5568;
+            margin-top: 2px;
+        }
+
+        /* Status Bar */
+        #ed-statusbar {
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 5px 16px;
+            font-size: 12px;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            height: 28px;
+        }
+
+        #ed-sb-msg {
+            flex: 1;
+        }
+
+        #ed-sb-counts {
+            color: #a0aec0;
+            font-size: 11px;
+        }
+
+        /* Modal */
+        #ed-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #ed-modal.show {
+            display: flex;
+        }
+
+        #ed-modal-box {
+            background: white;
+            border-radius: 12px;
+            padding: 26px 26px 20px;
+            width: 460px;
+            max-width: 95vw;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+            animation: modal-in 0.15s ease;
+        }
+
+        @keyframes modal-in {
+            from {
+                transform: translateY(-12px) scale(0.97);
+                opacity: 0;
+            }
+
+            to {
+                transform: none;
+                opacity: 1;
+            }
+        }
+
+        #ed-modal-box h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin-bottom: 16px;
+        }
+
+        .mf {
+            margin-bottom: 12px;
+        }
+
+        .mf label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .mf input {
+            width: 100%;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 8px 11px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s;
+            font-family: inherit;
+        }
+
+        .mf input:focus {
+            border-color: #0056b3;
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+        }
+
+        .m-acts {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 18px;
+        }
+
+        .m-acts button {
+            padding: 8px 18px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: 0.15s;
+        }
+
+        .m-save {
+            background: #0056b3;
+            color: white;
+        }
+
+        .m-save:hover {
+            background: #004299;
+        }
+
+        .m-cancel {
+            background: #f0f4f8;
+            color: #4a5568;
+        }
+
+        .m-cancel:hover {
+            background: #e2e8f0;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>🔖 Bookmark Tools</h1>
+    </header>
+
+    <div id="tab-bar">
+        <button class="tab-btn active" data-tab="merger">📚 マージ・最適化</button>
+        <button class="tab-btn" data-tab="editor">✏️ エディタ</button>
+    </div>
+
+    <!-- ═══ MERGER TAB ════════════════════════════════════════════ -->
+    <div id="tab-merger" class="tab-content active">
+        <div id="merger-view">
+            <p class="desc">
+                複数のブックマークHTMLを統合・最適化します。<br>
+                重複URL削除、ドメイン別フォルダ整理、ファイル間の差分抽出が可能です。
+            </p>
+
+            <div class="card">
+                <h2>📂 ファイルを選択</h2>
+                <div class="drop-zone" id="m-drop-zone">
+                    <span class="dz-icon">📁</span>
+                    ここにブックマークHTMLをドラッグ＆ドロップ<br>
+                    またはクリックしてファイルを選択<br>
+                    <small>（2つ以上のファイルで差分抽出も利用可能）</small>
+                </div>
+                <input type="file" id="m-file-input" multiple accept=".html,.htm">
+                <div class="file-chips" id="m-file-chips"></div>
+            </div>
+
+            <div class="card" id="m-result-card" style="display:none;">
+                <h2>📊 解析結果</h2>
+                <div class="stats-grid">
+                    <div class="stat-box"><span class="num" id="m-stat-total">0</span><span
+                            class="lbl">総リンク数（重複込み）</span></div>
+                    <div class="stat-box"><span class="num" id="m-stat-merged">0</span><span
+                            class="lbl">統合後（ユニーク）</span></div>
+                    <div class="stat-box"><span class="num" id="m-stat-diff">0</span><span class="lbl">差分のみ（非重複）</span>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button id="m-dl-merge" class="dl-btn btn-blue" disabled>
+                        🔗 すべて統合してDL<br><span style="font-size:11px;font-weight:normal;">（重複は1つにまとめる）</span>
+                    </button>
+                    <button id="m-dl-diff" class="dl-btn btn-green" disabled>
+                        ✂️ 差分のみDL<br><span style="font-size:11px;font-weight:normal;">（共通するものを全て除外）</span>
+                    </button>
+                </div>
+                <div class="log-box show" id="m-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ EDITOR TAB ════════════════════════════════════════════ -->
+    <div id="tab-editor" class="tab-content">
+        <div id="editor-view">
+
+            <div id="ed-toolbar">
+                <span id="ed-stats">ファイル未読み込み</span>
+                <div class="ed-spacer"></div>
+                <button class="ed-tb-btn ed-import" id="ed-btn-import">📂 Import</button>
+                <button class="ed-tb-btn ed-export" id="ed-btn-export" disabled>💾 Export HTML</button>
+                <input type="file" id="ed-file-input" accept=".html,.htm">
+            </div>
+
+            <div id="ed-layout">
+
+                <div id="ed-tree-panel">
+                    <div id="ed-tree-header">
+                        <span>📁 フォルダ</span>
+                        <button class="tree-add-btn" id="ed-btn-add-root">＋ フォルダ</button>
+                    </div>
+                    <div id="ed-tree-scroll">
+                        <div class="tree-empty">ファイルをインポートして<br>開始してください</div>
+                    </div>
+                </div>
+
+                <div id="ed-content-panel">
+                    <div id="ed-content-header">
+                        <div id="ed-breadcrumb">
+                            <span class="bc-item" onclick="edSelectFolder(null)">🏠 Root</span>
+                        </div>
+                        <div id="ed-content-actions">
+                            <button class="ca-btn" id="ed-btn-search">🔍</button>
+                            <button class="ca-btn" id="ed-btn-add-link" disabled>＋ リンク</button>
+                            <button class="ca-btn" id="ed-btn-add-folder" disabled>＋ フォルダ</button>
+                        </div>
+                    </div>
+                    <div id="ed-search-bar">
+                        <input type="text" id="ed-search-input" placeholder="タイトル・URLで検索...">
+                    </div>
+                    <div id="ed-content-list">
+                        <div class="ed-empty"><span class="big-ico">📚</span><span>ファイルをインポートして開始<br><small
+                                    style="color:#cbd5e0;">対応形式: Netscape Bookmark HTML</small></span></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="ed-statusbar">
+                <span id="ed-sb-msg">準備完了</span>
+                <span id="ed-sb-counts"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="ed-modal">
+        <div id="ed-modal-box">
+            <h3 id="ed-modal-title">編集</h3>
+            <div class="mf">
+                <label>タイトル</label>
+                <input type="text" id="ed-m-name" placeholder="タイトルを入力">
+            </div>
+            <div class="mf" id="ed-m-url-field">
+                <label>URL</label>
+                <input type="url" id="ed-m-url" placeholder="https://...">
+            </div>
+            <div class="m-acts">
+                <button class="m-cancel" id="ed-m-cancel">キャンセル</button>
+                <button class="m-save" id="ed-m-save">💾 保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        //  Tab Switching
+        // ═══════════════════════════════════════════════════════════════
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        //  MERGER
+        // ═══════════════════════════════════════════════════════════════
+        let mUrlMap = new Map();
+        let mFileCount = 0;
+
+        const mDrop = document.getElementById('m-drop-zone');
+        const mFileIn = document.getElementById('m-file-input');
+        const mDlMerge = document.getElementById('m-dl-merge');
+        const mDlDiff = document.getElementById('m-dl-diff');
+        const mLog = document.getElementById('m-log');
+        const mResult = document.getElementById('m-result-card');
+        const mChips = document.getElementById('m-file-chips');
+
+        mDrop.addEventListener('click', () => mFileIn.click());
+        mDrop.addEventListener('dragover', (e) => { e.preventDefault(); mDrop.classList.add('dragover'); });
+        mDrop.addEventListener('dragleave', () => mDrop.classList.remove('dragover'));
+        mDrop.addEventListener('drop', (e) => {
+            e.preventDefault(); mDrop.classList.remove('dragover');
+            mHandleFiles(e.dataTransfer.files);
+        });
+        mFileIn.addEventListener('change', (e) => mHandleFiles(e.target.files));
+
+        async function mHandleFiles(files) {
+            if (!files.length) return;
+            mReset();
+            mFileCount = files.length;
+            mChips.innerHTML = Array.from(files).map(f => `<span class="file-chip">📄 ${f.name}</span>`).join('');
+            mLog.textContent = `📂 ${mFileCount} ファイルを読み込み中...\n`;
+            mResult.style.display = 'block';
+            const contents = await Promise.all(Array.from(files).map(f => new Promise(r => {
+                const rd = new FileReader(); rd.onload = e => r(e.target.result); rd.readAsText(f);
+            })));
+            mProcess(contents);
+        }
+
+        function mReset() {
+            mUrlMap.clear(); mLog.textContent = ''; mChips.innerHTML = '';
+            mDlMerge.disabled = mDlDiff.disabled = true;
+            ['m-stat-total', 'm-stat-merged', 'm-stat-diff'].forEach(id => document.getElementById(id).textContent = '0');
+        }
+
+        function mProcess(htmlContents) {
+            const parser = new DOMParser(); let total = 0;
+            htmlContents.forEach((html, fi) => {
+                const links = parser.parseFromString(html, 'text/html').querySelectorAll('a');
+                mLog.textContent += `ファイル ${fi + 1}: ${links.length} リンク検出\n`;
+                total += links.length;
+                links.forEach(a => {
+                    const url = a.getAttribute('href');
+                    if (!url || !url.startsWith('http')) return;
+                    let hostname = 'Others';
+                    try { hostname = new URL(url).hostname; } catch (e) { }
+                    if (!mUrlMap.has(url)) mUrlMap.set(url, { title: a.textContent.trim() || url, url, addDate: a.getAttribute('add_date') || Math.floor(Date.now() / 1000), hostname, fi: new Set() });
+                    mUrlMap.get(url).fi.add(fi);
+                });
+            });
+            const all = Array.from(mUrlMap.values());
+            const diff = all.filter(i => i.fi.size === 1);
+            mLog.textContent += `──────────────\n解析完了:\n  総リンク: ${total}\n  ユニーク: ${all.length}\n  差分のみ: ${diff.length}\n`;
+            document.getElementById('m-stat-total').textContent = total.toLocaleString();
+            document.getElementById('m-stat-merged').textContent = all.length.toLocaleString();
+            document.getElementById('m-stat-diff').textContent = diff.length.toLocaleString();
+            mDlMerge.disabled = false;
+            mDlDiff.disabled = mFileCount < 2 || diff.length === 0;
+        }
+
+        mDlMerge.addEventListener('click', () => {
+            const bm = Array.from(mUrlMap.values()).sort((a, b) => a.hostname.localeCompare(b.hostname));
+            mDownload(bm, 'bookmarks_merged');
+        });
+        mDlDiff.addEventListener('click', () => {
+            const bm = Array.from(mUrlMap.values()).filter(i => i.fi.size === 1).sort((a, b) => a.hostname.localeCompare(b.hostname));
+            mDownload(bm, 'bookmarks_diff');
+        });
+
+        function mDownload(bookmarks, prefix) {
+            const grouped = {};
+            bookmarks.forEach(b => { if (!grouped[b.hostname]) grouped[b.hostname] = []; grouped[b.hostname].push(b); });
+            let html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n`;
+            for (const [host, items] of Object.entries(grouped)) {
+                html += `    <DT><H3 ADD_DATE="${Math.floor(Date.now() / 1000)}">${esc(host)}</H3>\n    <DL><p>\n`;
+                items.forEach(i => { html += `        <DT><A HREF="${esc(i.url)}" ADD_DATE="${i.addDate}">${esc(i.title)}</A>\n`; });
+                html += `    </DL><p>\n`;
+            }
+            html += `</DL><p>`;
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+            a.download = `${prefix}_${new Date().toISOString().slice(0, 10)}.html`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+            mLog.textContent += `\n💾 ${prefix} をダウンロード (${bookmarks.length} 件)\n`;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  EDITOR
+        // ═══════════════════════════════════════════════════════════════
+        let edTree = [], edPath = [], edExpanded = new Set(), edIdCtr = 0, edEditingId = null, edSearch = '';
+
+        const edSetStatus = msg => document.getElementById('ed-sb-msg').textContent = msg;
+
+        function edGenId() { return 'bm_' + (++edIdCtr); }
+
+        function edFind(id, nodes = edTree) {
+            for (const n of nodes) {
+                if (n.id === id) return n;
+                if (n.children) { const r = edFind(id, n.children); if (r) return r; }
+            }
+        }
+        function edFindArr(id, nodes = edTree) {
+            for (const n of nodes) {
+                if (n.id === id) return nodes;
+                if (n.children) { const r = edFindArr(id, n.children); if (r) return r; }
+            }
+        }
+        function edCountLinks(node) {
+            if (node.type === 'link') return 1;
+            return (node.children || []).reduce((s, c) => s + edCountLinks(c), 0);
+        }
+        function edCountAll(nodes = edTree) {
+            let links = 0, folders = 0;
+            const w = arr => arr.forEach(n => { if (n.type === 'link') links++; else { folders++; w(n.children || []); } });
+            w(nodes); return { links, folders };
+        }
+        function edCurrentItems() {
+            if (!edPath.length) return edTree;
+            return edFind(edPath[edPath.length - 1].id)?.children || edTree;
+        }
+
+        // Parse
+        function edParse(html) {
+            edIdCtr = 0;
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            function procDL(dl) {
+                if (!dl) return [];
+                const res = [];
+                for (const el of dl.children) {
+                    if (el.tagName !== 'DT' && el.tagName !== 'DD') continue;
+                    const a = el.querySelector(':scope > a, :scope > A');
+                    const h3 = el.querySelector(':scope > h3, :scope > H3');
+                    const sub = el.querySelector(':scope > dl, :scope > DL');
+                    if (a) res.push({ id: edGenId(), type: 'link', title: a.textContent.trim() || a.getAttribute('href') || 'Untitled', url: a.getAttribute('href') || '', addDate: parseInt(a.getAttribute('add_date') || a.getAttribute('ADD_DATE')) || Math.floor(Date.now() / 1000) });
+                    else if (h3) res.push({ id: edGenId(), type: 'folder', title: h3.textContent.trim() || 'Folder', addDate: parseInt(h3.getAttribute('add_date') || h3.getAttribute('ADD_DATE')) || Math.floor(Date.now() / 1000), children: procDL(sub) });
+                }
+                return res;
+            }
+            const rootDL = doc.querySelector('dl, DL');
+            return rootDL ? procDL(rootDL) : [];
+        }
+
+        // Serialize
+        function edSerialize() {
+            function toHTML(nodes, d) {
+                const ind = '    '.repeat(d);
+                let s = `${ind}<DL><p>\n`;
+                for (const n of nodes) {
+                    if (n.type === 'link') s += `${ind}    <DT><A HREF="${esc(n.url)}" ADD_DATE="${n.addDate}">${esc(n.title)}</A>\n`;
+                    else { s += `${ind}    <DT><H3 ADD_DATE="${n.addDate}">${esc(n.title)}</H3>\n`; s += toHTML(n.children || [], d + 1); }
+                }
+                return s + `${ind}</DL><p>\n`;
+            }
+            return `<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n${toHTML(edTree, 0)}`;
+        }
+
+        // Render
+        function edUpdateStats() {
+            const { links, folders } = edCountAll();
+            document.getElementById('ed-stats').textContent = `${links.toLocaleString()} リンク · ${folders} フォルダ`;
+            document.getElementById('ed-sb-counts').textContent = `合計: ${links.toLocaleString()} リンク / ${folders} フォルダ`;
+        }
+
+        function edRenderTree() {
+            const scroll = document.getElementById('ed-tree-scroll');
+            const folders = edTree.filter(n => n.type === 'folder');
+            if (!folders.length) { scroll.innerHTML = `<div class="tree-empty">${edTree.length ? 'フォルダなし' : 'ファイルをインポートして<br>開始してください'}</div>`; return; }
+            const selId = edPath.length ? edPath[edPath.length - 1].id : null;
+            function rNode(node, depth) {
+                if (node.type !== 'folder') return '';
+                const isSel = node.id === selId;
+                const isExp = edExpanded.has(node.id);
+                const subs = (node.children || []).filter(c => c.type === 'folder');
+                const cnt = edCountLinks(node);
+                let h = `<div class="tn${isSel ? ' selected' : ''}" data-id="${node.id}" onclick="edTreeClick('${node.id}')">`;
+                h += `<span class="tn-ind" style="width:${depth * 16}px;flex-shrink:0;"></span>`;
+                h += subs.length ? `<span class="tn-tog" onclick="event.stopPropagation();edToggle('${node.id}')">${isExp ? '▼' : '▶'}</span>` : `<span class="tn-tog-ph"></span>`;
+                h += `<span class="tn-ico">📁</span><span class="tn-lbl" title="${esc(node.title)}">${esc(node.title)}</span><span class="tn-cnt">${cnt}</span></div>`;
+                if (isExp) subs.forEach(c => h += rNode(c, depth + 1));
+                return h;
+            }
+            scroll.innerHTML = folders.map(n => rNode(n, 0)).join('');
+        }
+
+        function edRenderBreadcrumb() {
+            let h = `<span class="bc-item" onclick="edSelectFolder(null)">🏠 Root</span>`;
+            edPath.forEach((seg, i) => {
+                h += `<span class="bc-sep">›</span>`;
+                if (i === edPath.length - 1) h += `<span class="bc-cur">📁 ${esc(seg.title)}</span>`;
+                else h += `<span class="bc-item" onclick="edSelectByPath(${i})">📁 ${esc(seg.title)}</span>`;
+            });
+            document.getElementById('ed-breadcrumb').innerHTML = h;
+        }
+
+        function edRenderContent() {
+            const list = document.getElementById('ed-content-list');
+            document.getElementById('ed-btn-add-link').disabled = false;
+            document.getElementById('ed-btn-add-folder').disabled = false;
+            let items = edCurrentItems();
+            if (edSearch) { const q = edSearch.toLowerCase(); items = items.filter(i => i.title.toLowerCase().includes(q) || (i.url && i.url.toLowerCase().includes(q))); }
+            if (!items.length) {
+                list.innerHTML = `<div class="ed-empty"><span class="big-ico">${edSearch ? '🔍' : '📭'}</span><span>${edSearch ? `「${esc(edSearch)}」の結果なし` : 'このフォルダは空です'}</span></div>`;
+                return;
+            }
+            list.innerHTML = items.map((item, idx) => {
+                const first = idx === 0, last = idx === items.length - 1;
+                if (item.type === 'link') return `
+<div class="ci" data-id="${item.id}">
+  <span class="ci-ico">🔗</span>
+  <div class="ci-info">
+    <div class="ci-ttl" title="${esc(item.title)}" onclick="edEditInline('${item.id}','title')">${esc(item.title)}</div>
+    <div class="ci-url" title="${esc(item.url)}"   onclick="edEditInline('${item.id}','url')">${esc(item.url)}</div>
+  </div>
+  <div class="ci-acts">
+    <button class="ia-btn" onclick="edOpenModal('${item.id}')">✏️</button>
+    <button class="ia-btn ia-open" onclick="window.open('${esc(item.url)}','_blank')" ${!item.url ? 'disabled' : ''}>🔗</button>
+    <button class="ia-btn" onclick="edMove('${item.id}',-1)" ${first ? 'disabled' : ''}>↑</button>
+    <button class="ia-btn" onclick="edMove('${item.id}',1)"  ${last ? 'disabled' : ''}>↓</button>
+    <button class="ia-btn ia-del" onclick="edDelete('${item.id}')">🗑️</button>
+  </div>
+</div>`;
+                const lc = (item.children || []).reduce((s, c) => s + edCountLinks(c), 0), fc = (item.children || []).filter(c => c.type === 'folder').length;
+                return `
+<div class="ci" data-id="${item.id}" style="border-left:3px solid #e2e8f0;">
+  <span class="ci-ico">📁</span>
+  <div class="ci-info">
+    <div class="ci-ttl" title="${esc(item.title)}" onclick="edEditInline('${item.id}','title')">${esc(item.title)}</div>
+    <div class="ci-meta">${lc} リンク · ${fc} サブフォルダ</div>
+  </div>
+  <div class="ci-acts">
+    <button class="ia-btn ia-open" onclick="edOpenSub('${item.id}')">📂 開く</button>
+    <button class="ia-btn" onclick="edOpenModal('${item.id}')">✏️</button>
+    <button class="ia-btn" onclick="edMove('${item.id}',-1)" ${first ? 'disabled' : ''}>↑</button>
+    <button class="ia-btn" onclick="edMove('${item.id}',1)"  ${last ? 'disabled' : ''}>↓</button>
+    <button class="ia-btn ia-del" onclick="edDelete('${item.id}')">🗑️</button>
+  </div>
+</div>`;
+            }).join('');
+        }
+
+        function edRenderAll() {
+            edRenderTree(); edRenderBreadcrumb(); edRenderContent(); edUpdateStats();
+            document.getElementById('ed-btn-export').disabled = edTree.length === 0;
+        }
+
+        // Navigation
+        function edBuildPath(targetId, nodes = edTree, path = []) {
+            for (const n of nodes) {
+                if (n.type !== 'folder') continue;
+                const p = [...path, { id: n.id, title: n.title }];
+                if (n.id === targetId) return p;
+                if (n.children) { const r = edBuildPath(targetId, n.children, p); if (r) return r; }
+            }
+        }
+        function edTreeClick(id) {
+            edPath = edBuildPath(id) || [];
+            edExpanded.add(id); edSearch = ''; document.getElementById('ed-search-input').value = '';
+            edRenderAll();
+        }
+        function edSelectFolder(id) {
+            if (id === null) { edPath = []; } else { edTreeClick(id); return; }
+            edSearch = ''; edRenderAll();
+        }
+        function edSelectByPath(idx) { edPath = edPath.slice(0, idx + 1); edSearch = ''; edRenderAll(); }
+        function edOpenSub(id) {
+            const n = edFind(id); if (!n || n.type !== 'folder') return;
+            edPath = [...edPath, { id: n.id, title: n.title }]; edExpanded.add(id); edSearch = ''; edRenderAll();
+        }
+        function edToggle(id) { edExpanded.has(id) ? edExpanded.delete(id) : edExpanded.add(id); edRenderTree(); }
+
+        // CRUD
+        function edAddLink() {
+            const node = { id: edGenId(), type: 'link', title: '新しいリンク', url: '', addDate: Math.floor(Date.now() / 1000) };
+            edCurrentItems().push(node); edRenderAll(); edSetStatus('✅ リンクを追加');
+            setTimeout(() => edOpenModal(node.id), 50);
+        }
+        function edAddFolder() {
+            const node = { id: edGenId(), type: 'folder', title: '新しいフォルダ', addDate: Math.floor(Date.now() / 1000), children: [] };
+            edCurrentItems().push(node); edRenderAll(); edSetStatus('✅ フォルダを追加');
+            setTimeout(() => edOpenModal(node.id), 50);
+        }
+        function edAddRoot() {
+            const node = { id: edGenId(), type: 'folder', title: '新しいフォルダ', addDate: Math.floor(Date.now() / 1000), children: [] };
+            edTree.push(node); edExpanded.add(node.id); edRenderAll(); edSetStatus('✅ ルートフォルダを追加');
+            setTimeout(() => edOpenModal(node.id), 50);
+        }
+        function edDelete(id) {
+            const n = edFind(id); if (!n) return;
+            const cnt = n.type === 'folder' ? edCountLinks(n) : 0;
+            if (!confirm(n.type === 'folder' && cnt > 0 ? `「${n.title}」と中の${cnt}件を削除しますか？` : `「${n.title}」を削除しますか？`)) return;
+            const arr = edFindArr(id); if (arr) { const i = arr.findIndex(x => x.id === id); if (i !== -1) arr.splice(i, 1); }
+            if (edPath.some(s => s.id === id)) edPath = edPath.slice(0, edPath.findIndex(s => s.id === id));
+            edRenderAll(); edSetStatus(`🗑️ 「${n.title}」を削除`);
+        }
+        function edMove(id, dir) {
+            const arr = edFindArr(id); if (!arr) return;
+            const i = arr.findIndex(n => n.id === id), ni = i + dir;
+            if (ni < 0 || ni >= arr.length) return;
+            [arr[i], arr[ni]] = [arr[ni], arr[i]]; edRenderContent(); edSetStatus('✅ 移動しました');
+        }
+        function edEditInline(id, field) {
+            const n = edFind(id); if (!n) return;
+            const ci = document.querySelector(`.ci[data-id="${id}"]`); if (!ci) return;
+            const sel = field === 'title' ? '.ci-ttl' : '.ci-url';
+            const el = ci.querySelector(sel); if (!el) return;
+            const inp = document.createElement('input');
+            inp.className = 'ci-edit-input' + (field === 'url' ? ' url-inp' : '');
+            inp.value = field === 'title' ? n.title : n.url || '';
+            if (field === 'url') inp.type = 'url';
+            el.replaceWith(inp); inp.focus(); inp.select();
+            const save = () => {
+                if (field === 'title') { n.title = inp.value.trim() || n.title; const s = edPath.find(x => x.id === id); if (s) s.title = n.title; }
+                else n.url = inp.value.trim();
+                edRenderAll(); edSetStatus('✅ 更新しました');
+            };
+            inp.addEventListener('keydown', e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') edRenderContent(); });
+            inp.addEventListener('blur', save);
+        }
+
+        // Modal
+        function edOpenModal(id) {
+            const n = edFind(id); if (!n) return; edEditingId = id;
+            document.getElementById('ed-modal-title').textContent = n.type === 'link' ? '🔗 リンクを編集' : '📁 フォルダを編集';
+            document.getElementById('ed-m-name').value = n.title;
+            document.getElementById('ed-m-url-field').style.display = n.type === 'link' ? 'block' : 'none';
+            if (n.type === 'link') document.getElementById('ed-m-url').value = n.url || '';
+            document.getElementById('ed-modal').classList.add('show');
+            document.getElementById('ed-m-name').focus(); document.getElementById('ed-m-name').select();
+        }
+        function edSaveModal() {
+            if (!edEditingId) return; const n = edFind(edEditingId); if (!n) return;
+            const t = document.getElementById('ed-m-name').value.trim(); if (t) n.title = t;
+            if (n.type === 'link') n.url = document.getElementById('ed-m-url').value.trim();
+            if (n.type === 'folder') { const s = edPath.find(x => x.id === edEditingId); if (s) s.title = n.title; }
+            edCloseModal(); edRenderAll(); edSetStatus('✅ 保存しました');
+        }
+        function edCloseModal() { edEditingId = null; document.getElementById('ed-modal').classList.remove('show'); }
+
+        // Import / Export
+        function edImport(file) {
+            if (!file) return;
+            const r = new FileReader();
+            r.onload = e => {
+                try {
+                    edTree = edParse(e.target.result); edPath = []; edExpanded.clear(); edSearch = '';
+                    edTree.filter(n => n.type === 'folder').forEach(n => edExpanded.add(n.id));
+                    edRenderAll(); edSetStatus(`✅ 「${file.name}」を読み込みました`);
+                } catch (err) { edSetStatus(`❌ エラー: ${err.message}`); }
+            };
+            r.readAsText(file);
+        }
+        function edExport() {
+            const html = edSerialize();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+            a.download = `bookmarks_edited_${new Date().toISOString().slice(0, 10)}.html`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+            edSetStatus('💾 エクスポートしました');
+        }
+
+        // Editor Event Listeners
+        document.getElementById('ed-btn-import').addEventListener('click', () => document.getElementById('ed-file-input').click());
+        document.getElementById('ed-file-input').addEventListener('change', e => edImport(e.target.files[0]));
+        document.getElementById('ed-btn-export').addEventListener('click', edExport);
+        document.getElementById('ed-btn-add-link').addEventListener('click', edAddLink);
+        document.getElementById('ed-btn-add-folder').addEventListener('click', edAddFolder);
+        document.getElementById('ed-btn-add-root').addEventListener('click', edAddRoot);
+        document.getElementById('ed-m-save').addEventListener('click', edSaveModal);
+        document.getElementById('ed-m-cancel').addEventListener('click', edCloseModal);
+        document.getElementById('ed-modal').addEventListener('click', e => { if (e.target === document.getElementById('ed-modal')) edCloseModal(); });
+        document.getElementById('ed-btn-search').addEventListener('click', () => {
+            const bar = document.getElementById('ed-search-bar'); bar.classList.toggle('show');
+            if (bar.classList.contains('show')) document.getElementById('ed-search-input').focus();
+            else { edSearch = ''; document.getElementById('ed-search-input').value = ''; edRenderContent(); }
+        });
+        document.getElementById('ed-search-input').addEventListener('input', e => { edSearch = e.target.value; edRenderContent(); });
+        document.addEventListener('keydown', e => {
+            if (document.getElementById('ed-modal').classList.contains('show')) {
+                if (e.key === 'Escape') edCloseModal();
+                if (e.key === 'Enter' && e.target.tagName === 'INPUT') edSaveModal();
+            }
+        });
+
+        // Page-level drag & drop for editor tab
+        document.addEventListener('dragover', e => e.preventDefault());
+        document.addEventListener('drop', e => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file && (file.name.endsWith('.html') || file.name.endsWith('.htm'))) {
+                // Switch to editor tab if not already there
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.querySelector('[data-tab="editor"]').classList.add('active');
+                document.getElementById('tab-editor').classList.add('active');
+                edImport(file);
+            }
+        });
+
+        // ── Shared utility ──
+        function esc(s) { return s ? s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : ''; }
+
+        // Init
+        edRenderAll();
+    </script>
+</body>
+
+</html>
